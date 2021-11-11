@@ -1,0 +1,30 @@
+on: [pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          curl https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_linux_amd64 -L --output yq
+          curl https://github.com/open-policy-agent/opa/releases/download/v0.34.2/opa_linux_amd64 -L --output opa
+          chmod +x yq opa
+
+      - name: Convert manifests
+        shell: bash
+        run: |
+          ./yq eval -o=json sample-k8s-manifests-validation/manifests/deployment-with-resources.yaml > data.json
+
+      - name: Validate manifests
+        shell: bash
+        run: |
+          ./opa eval \
+            --format pretty \
+            --fail-defined \
+            --data sample-k8s-manifests-validation/policies/ \
+            --input data.json "data.resources.analysis.deny[x]" 
