@@ -1,3 +1,4 @@
+name: sample-k8s-manifests-validation
 on: [pull_request]
 
 jobs:
